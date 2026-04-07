@@ -109,6 +109,7 @@ export default function App() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Theme Sync
   useEffect(() => {
@@ -198,11 +199,23 @@ export default function App() {
 
   // Auth Actions
   const login = async () => {
+    setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
+      // Add custom parameters to force account selection if needed
+      provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
+      let message = 'Login failed. Please try again.';
+      if (error.code === 'auth/popup-blocked') {
+        message = 'Popup was blocked by your browser. Please allow popups for this site.';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        message = 'This domain is not authorized in the Firebase console. Please check your Firebase settings.';
+      } else if (error.message) {
+        message = error.message;
+      }
+      setAuthError(message);
     }
   };
 
@@ -497,13 +510,20 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <button 
-              onClick={login}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20 hover:bg-indigo-700 transition-all active:scale-95"
-            >
-              <LogIn size={18} />
-              Sign in with Google
-            </button>
+            <div className="space-y-3">
+              <button 
+                onClick={login}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20 hover:bg-indigo-700 transition-all active:scale-95"
+              >
+                <LogIn size={18} />
+                Sign in with Google
+              </button>
+              {authError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-[10px] text-red-600 dark:text-red-400 leading-relaxed text-center animate-in fade-in slide-in-from-top-1">
+                  {authError}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </aside>
