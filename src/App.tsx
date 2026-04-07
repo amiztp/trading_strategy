@@ -110,6 +110,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Theme Sync
   useEffect(() => {
@@ -199,10 +200,11 @@ export default function App() {
 
   // Auth Actions
   const login = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
-      // Add custom parameters to force account selection if needed
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
     } catch (error: any) {
@@ -212,10 +214,14 @@ export default function App() {
         message = 'Popup was blocked by your browser. Please allow popups for this site.';
       } else if (error.code === 'auth/unauthorized-domain') {
         message = 'This domain is not authorized in the Firebase console. Please check your Firebase settings.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        message = 'A sign-in request was already in progress. Please wait for the popup or try again.';
       } else if (error.message) {
         message = error.message;
       }
       setAuthError(message);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -513,10 +519,18 @@ export default function App() {
             <div className="space-y-3">
               <button 
                 onClick={login}
-                className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20 hover:bg-indigo-700 transition-all active:scale-95"
+                disabled={isLoggingIn}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20 hover:bg-indigo-700 transition-all active:scale-95",
+                  isLoggingIn && "opacity-50 cursor-not-allowed"
+                )}
               >
-                <LogIn size={18} />
-                Sign in with Google
+                {isLoggingIn ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <LogIn size={18} />
+                )}
+                {isLoggingIn ? 'Signing in...' : 'Sign in with Google'}
               </button>
               {authError && (
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-[10px] text-red-600 dark:text-red-400 leading-relaxed text-center animate-in fade-in slide-in-from-top-1">
