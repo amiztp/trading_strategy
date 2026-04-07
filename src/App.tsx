@@ -129,8 +129,14 @@ export default function App() {
       try {
         await getDocFromServer(doc(db, 'test', 'connection'));
       } catch (error) {
-        if(error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration. ");
+        if(error instanceof Error) {
+          if (error.message.includes('the client is offline')) {
+            console.error("Firebase Connection Error: The client is offline. This usually indicates a configuration mismatch (e.g., incorrect Firestore Database ID).");
+            setAuthError("Database connection failed. Please verify your Firebase configuration (Database ID might be incorrect).");
+          } else {
+            console.error("Firebase Connection Test failed:", error.message);
+            setAuthError(`Connection failed: ${error.message}`);
+          }
         }
       }
     }
