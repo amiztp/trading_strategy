@@ -150,9 +150,6 @@ export default function App() {
         id: doc.id,
       })) as Strategy[];
       setStrategies(data);
-      if (data.length > 0 && !activeTab) {
-        setActiveTab(data[0].id);
-      }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, path);
     });
@@ -160,8 +157,15 @@ export default function App() {
     return () => unsubscribe();
   }, [isAuthReady, user]);
 
+  // 4. Initial Selection
+  useEffect(() => {
+    if (strategies.length > 0 && !activeTab) {
+      setActiveTab(strategies[0].id);
+    }
+  }, [strategies, activeTab]);
+
   const activeStrategy = useMemo(() => 
-    strategies.find(s => s.id === activeTab) || strategies[0], 
+    strategies.find(s => s.id === activeTab), 
     [strategies, activeTab]
   );
 

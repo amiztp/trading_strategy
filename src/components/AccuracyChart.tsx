@@ -1,5 +1,5 @@
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import React, { useEffect, useRef } from 'react';
+import * as d3 from 'd3';
 
 interface AccuracyChartProps {
   checkedCount: number;
@@ -7,43 +7,76 @@ interface AccuracyChartProps {
 }
 
 export const AccuracyChart: React.FC<AccuracyChartProps> = ({ checkedCount, totalCount }) => {
+  const chartRef = useRef<HTMLDivElement>(null);
   const percentage = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
-  
-  const data = totalCount === 0 
-    ? [{ name: 'Empty', value: 1, color: '#F1F5F9' }] // Slate 100
-    : [
-        { name: 'Checked', value: checkedCount, color: '#4F46E5' }, // Indigo 600
-        { name: 'Unchecked', value: Math.max(0, totalCount - checkedCount), color: '#E2E8F0' }, // Slate 200
-      ];
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    // Clear previous chart
+    d3.select(chartRef.current).selectAll('*').remove();
+
+    const width = chartRef.current.clientWidth;
+    const height = 220;
+    const radius = Math.min(width, height) / 2;
+
+    const svg = d3.select(chartRef.current)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .append('g')
+      .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+    const data = totalCount === 0 
+      ? [{ label: 'Empty', value: 1, color: '#F1F5F9' }]
+      : [
+          { label: 'Checked', value: checkedCount, color: '#4F46E5' },
+          { label: 'Unchecked', value: Math.max(0, totalCount - checkedCount), color: '#E2E8F0' }
+        ];
+
+    const pie = d3.pie<any>()
+      .value(d => d.value)
+      .sort(null);
+
+    const arc = d3.arc<any>()
+      .innerRadius(radius * 0.75)
+      .outerRadius(radius)
+      .cornerRadius(8);
+
+    svg.selectAll('path')
+      .data(pie(data))
+      .enter()
+      .append('path')
+      .attr('d', arc)
+      .attr('fill', d => d.data.color)
+      .attr('stroke', 'white')
+      .style('stroke-width', '2px');
+
+    // Central Text
+    svg.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '-0.2em')
+      .style('font-size', '32px')
+      .style('font-weight', '800')
+      .style('font-family', 'JetBrains Mono, monospace')
+      .style('fill', '#0f172a')
+      .text(`${percentage}%`);
+
+    svg.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '1.2em')
+      .style('font-size', '10px')
+      .style('font-weight', '700')
+      .style('text-transform', 'uppercase')
+      .style('letter-spacing', '0.1em')
+      .style('fill', '#94a3b8')
+      .text('Accuracy');
+
+  }, [checkedCount, totalCount, percentage]);
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="relative w-full h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={65}
-              outerRadius={85}
-              paddingAngle={totalCount > 0 ? 5 : 0}
-              dataKey="value"
-              startAngle={90}
-              endAngle={450}
-              stroke="none"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-4xl font-bold text-slate-900 font-mono tracking-tighter">{percentage}%</span>
-          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-[0.2em] mt-1">Accuracy</span>
-        </div>
-      </div>
+      <div ref={chartRef} className="w-full h-[220px]" />
       
       <div className="mt-2 flex gap-8">
         <div className="flex items-center gap-3">
