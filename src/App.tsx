@@ -14,7 +14,9 @@ import {
   Save,
   LogIn,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -106,6 +108,18 @@ export default function App() {
   const [newRuleText, setNewRuleText] = useState('');
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
+  // Theme Sync
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   // 1. Test Connection
   useEffect(() => {
@@ -140,8 +154,7 @@ export default function App() {
     const path = 'strategies';
     const q = query(
       collection(db, path),
-      where('uid', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('uid', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -149,6 +162,10 @@ export default function App() {
         ...doc.data(),
         id: doc.id,
       })) as Strategy[];
+      
+      // Sort client-side to avoid requiring a composite index
+      data.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      
       setStrategies(data);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, path);
@@ -206,7 +223,7 @@ export default function App() {
       const newStrategy = {
         name: `Strategy ${strategies.length + 1}`,
         rules: [
-          { id: 'r1', text: 'Define Objectives', checked: true },
+          { id: 'r1', text: 'Define Objectives', checked: false },
           { id: 'r2', text: 'Identify Risks', checked: false },
           { id: 'r3', text: 'Allocate Resources', checked: false },
         ],
@@ -345,21 +362,29 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden relative transition-colors duration-300">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 z-40">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-40">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
             <LayoutDashboard size={18} strokeWidth={2.5} />
           </div>
-          <h1 className="text-sm font-bold tracking-tight text-slate-900">Strategy Builder</h1>
+          <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">Strategy Builder</h1>
         </div>
-        <button 
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
-        >
-          {isSidebarOpen ? <X size={24} /> : <MoreVertical size={24} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          >
+            {isSidebarOpen ? <X size={24} /> : <MoreVertical size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar Overlay */}
@@ -377,17 +402,26 @@ export default function App() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:relative inset-y-0 left-0 w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-50 transition-transform duration-300 lg:translate-x-0",
+        "fixed lg:relative inset-y-0 left-0 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-50 transition-all duration-300 lg:translate-x-0",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="p-6 flex items-center gap-3 border-b border-slate-100">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <LayoutDashboard size={22} strokeWidth={2.5} />
+        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20">
+              <LayoutDashboard size={22} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Strategy</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Builder Pro</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-slate-900">Strategy</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Builder Pro</p>
-          </div>
+          <button 
+            onClick={toggleTheme}
+            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+            title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-hide">
@@ -411,26 +445,27 @@ export default function App() {
                     setIsSidebarOpen(false);
                   }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left",
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left relative group/item",
                     activeTab === s.id 
-                      ? "bg-indigo-50 text-indigo-700 shadow-sm" 
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                      ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 shadow-sm" 
+                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
                   )}
                 >
                   <div className={cn(
-                    "w-1.5 h-1.5 rounded-full transition-all",
-                    activeTab === s.id ? "bg-indigo-600 scale-125" : "bg-slate-300 group-hover:bg-slate-400"
+                    "w-1.5 h-1.5 rounded-full transition-all shrink-0",
+                    activeTab === s.id ? "bg-indigo-600 scale-125" : "bg-slate-300 group-hover/item:bg-slate-400"
                   )} />
-                  <span className="truncate flex-1">{s.name}</span>
-                  <span className="text-[10px] font-mono opacity-50">{s.rules.length}</span>
+                  <span className="truncate flex-1 pr-12">{s.name}</span>
+                  <span className="text-[10px] font-mono opacity-50 shrink-0">{s.rules.length}</span>
                 </button>
                 
-                {activeTab === s.id && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => duplicateStrategy(s)} className="p-1.5 hover:bg-indigo-100 text-indigo-600 rounded-lg"><Copy size={12} /></button>
-                    <button onClick={() => removeStrategy(s.id)} className="p-1.5 hover:bg-red-100 text-red-600 rounded-lg"><Trash2 size={12} /></button>
-                  </div>
-                )}
+                <div className={cn(
+                  "absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 z-10 transition-all",
+                  activeTab === s.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}>
+                  <button onClick={(e) => { e.stopPropagation(); duplicateStrategy(s); }} className="p-1.5 hover:bg-indigo-100 dark:hover:bg-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-lg transition-colors"><Copy size={12} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); removeStrategy(s.id); }} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg transition-colors"><Trash2 size={12} /></button>
+                </div>
               </div>
             ))
           ) : (
@@ -441,19 +476,19 @@ export default function App() {
         </div>
 
         {/* User Profile / Auth */}
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800">
           {user ? (
-            <div className="flex items-center justify-between p-2 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3 overflow-hidden">
                 {user.photoURL ? (
                   <img src={user.photoURL} alt="" className="w-8 h-8 rounded-xl" referrerPolicy="no-referrer" />
                 ) : (
-                  <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xs">
+                  <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center font-bold text-xs">
                     {user.displayName?.[0]}
                   </div>
                 )}
                 <div className="flex flex-col overflow-hidden">
-                  <span className="text-xs font-bold text-slate-700 truncate">{user.displayName}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{user.displayName}</span>
                   <span className="text-[10px] text-slate-400 truncate">{user.email}</span>
                 </div>
               </div>
@@ -464,7 +499,7 @@ export default function App() {
           ) : (
             <button 
               onClick={login}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+              className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20 hover:bg-indigo-700 transition-all active:scale-95"
             >
               <LogIn size={18} />
               Sign in with Google
@@ -474,34 +509,34 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide pt-20 lg:pt-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide pt-24 lg:pt-10 transition-colors duration-300">
         {activeStrategy ? (
           <div className="max-w-5xl mx-auto space-y-6 md:space-y-8">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div className="space-y-1">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-3">
                   {isEditingStrategy === activeStrategy.id ? (
                     <input
                       autoFocus
-                      className="bg-white border-2 border-indigo-500 text-2xl md:text-3xl font-bold text-slate-900 rounded-xl px-3 py-1 focus:outline-none shadow-xl shadow-indigo-50 w-full max-w-xs"
+                      className="bg-white dark:bg-slate-900 border-2 border-indigo-500 text-2xl md:text-3xl font-bold text-slate-900 dark:text-white rounded-xl px-3 py-1 focus:outline-none shadow-xl shadow-indigo-50 dark:shadow-indigo-900/10 w-full max-w-xs"
                       defaultValue={activeStrategy.name}
                       onBlur={(e) => updateStrategyName(activeStrategy.id, e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && updateStrategyName(activeStrategy.id, e.currentTarget.value)}
                     />
                   ) : (
                     <h2 
-                      className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight hover:text-indigo-600 cursor-pointer transition-colors truncate"
+                      className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors truncate"
                       onClick={() => setIsEditingStrategy(activeStrategy.id)}
                     >
                       {activeStrategy.name}
                     </h2>
                   )}
-                  <button onClick={() => setIsEditingStrategy(activeStrategy.id)} className="text-slate-300 hover:text-indigo-500 transition-colors shrink-0">
+                  <button onClick={() => setIsEditingStrategy(activeStrategy.id)} className="text-slate-300 dark:text-slate-600 hover:text-indigo-500 transition-colors shrink-0">
                     <Edit2 size={20} />
                   </button>
                 </div>
-                <p className="text-xs md:text-sm font-medium text-slate-400">
+                <p className="text-xs md:text-sm font-medium text-slate-400 dark:text-slate-500">
                   Created on {new Date(activeStrategy.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -509,13 +544,13 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => duplicateStrategy(activeStrategy)}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
                 >
                   <Copy size={16} /> <span className="hidden sm:inline">Duplicate</span>
                 </button>
                 <button 
                   onClick={() => removeStrategy(activeStrategy.id)}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-red-100 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 transition-all shadow-sm"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900/30 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all shadow-sm"
                 >
                   <Trash2 size={16} /> <span className="hidden sm:inline">Delete</span>
                 </button>
@@ -525,15 +560,15 @@ export default function App() {
             {/* Bento Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
               {/* Rules List Card */}
-              <div className="lg:col-span-2 bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+              <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center">
                       <Settings size={18} />
                     </div>
-                    <h3 className="font-bold text-slate-800">Strategy Rules</h3>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200">Strategy Rules</h3>
                   </div>
-                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-2.5 py-1 rounded-full uppercase tracking-widest">
+                  <span className="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-full uppercase tracking-widest">
                     {activeStrategy.rules.length} Total
                   </span>
                 </div>
@@ -550,8 +585,8 @@ export default function App() {
                         className={cn(
                           "group flex items-center justify-between p-4 rounded-2xl border transition-all",
                           rule.checked 
-                            ? "bg-indigo-50/50 border-indigo-100" 
-                            : "bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:shadow-slate-100"
+                            ? "bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/30" 
+                            : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-md hover:shadow-slate-100 dark:hover:shadow-none"
                         )}
                       >
                         <div className="flex items-center gap-4 flex-1">
@@ -561,7 +596,7 @@ export default function App() {
                               "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
                               rule.checked 
                                 ? "bg-indigo-600 border-indigo-600 text-white" 
-                                : "bg-white border-slate-200 text-transparent hover:border-indigo-400"
+                                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-transparent hover:border-indigo-400"
                             )}
                           >
                             <CheckCircle2 size={16} strokeWidth={3} />
@@ -570,7 +605,7 @@ export default function App() {
                           {isEditingRule?.ruleId === rule.id ? (
                             <input
                               autoFocus
-                              className="flex-1 bg-white border-2 border-indigo-300 rounded-lg px-2 py-1 text-slate-800 focus:outline-none"
+                              className="flex-1 bg-white dark:bg-slate-800 border-2 border-indigo-300 dark:border-indigo-900 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 focus:outline-none"
                               defaultValue={rule.text}
                               onBlur={(e) => updateRuleText(activeStrategy.id, rule.id, e.target.value)}
                               onKeyDown={(e) => e.key === 'Enter' && updateRuleText(activeStrategy.id, rule.id, e.currentTarget.value)}
@@ -579,7 +614,7 @@ export default function App() {
                             <span 
                               className={cn(
                                 "text-sm font-semibold transition-all cursor-pointer",
-                                rule.checked ? "text-slate-400 line-through" : "text-slate-700"
+                                rule.checked ? "text-slate-400 dark:text-slate-600 line-through" : "text-slate-700 dark:text-slate-300"
                               )}
                               onClick={() => setIsEditingRule({ strategyId: activeStrategy.id, ruleId: rule.id })}
                             >
@@ -589,10 +624,10 @@ export default function App() {
                         </div>
 
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => duplicateRule(activeStrategy.id, rule)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-colors">
+                          <button onClick={() => duplicateRule(activeStrategy.id, rule)} className="p-2 text-slate-400 dark:text-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-colors">
                             <Copy size={14} />
                           </button>
-                          <button onClick={() => removeRule(activeStrategy.id, rule.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-xl transition-colors">
+                          <button onClick={() => removeRule(activeStrategy.id, rule.id)} className="p-2 text-slate-400 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-colors">
                             <X size={14} />
                           </button>
                         </div>
@@ -601,7 +636,7 @@ export default function App() {
                   </AnimatePresence>
                 </div>
 
-                <div className="p-6 bg-slate-50/50 border-t border-slate-100">
+                <div className="p-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -609,12 +644,12 @@ export default function App() {
                       value={newRuleText}
                       onChange={(e) => setNewRuleText(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addRule(activeStrategy.id)}
-                      className="flex-1 bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
+                      className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
                     />
                     <button 
                       onClick={() => addRule(activeStrategy.id)}
                       disabled={!newRuleText.trim()}
-                      className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-indigo-100"
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-indigo-900/20"
                     >
                       Add Rule
                     </button>
@@ -623,12 +658,12 @@ export default function App() {
               </div>
 
               {/* Stats Card */}
-              <div className="space-y-8">
-                <div className="bg-white rounded-[32px] border border-slate-200 p-8 shadow-sm">
+              <div className="space-y-6 md:space-y-8">
+                <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                   <AccuracyChart checkedCount={checkedCount} totalCount={totalCount} />
                 </div>
 
-                <div className="bg-indigo-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
+                <div className="bg-indigo-600 rounded-[32px] p-6 text-white shadow-xl shadow-indigo-200 dark:shadow-indigo-900/40 relative overflow-hidden">
                   <div className="relative z-10 space-y-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -670,19 +705,19 @@ export default function App() {
             </div>
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-            <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-[40px] flex items-center justify-center shadow-inner">
+          <div className="min-h-[calc(100vh-160px)] flex flex-col items-center justify-center text-center space-y-6">
+            <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-[40px] flex items-center justify-center shadow-inner">
               <LayoutDashboard size={48} strokeWidth={1.5} />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-slate-900">No Strategy Selected</h2>
-              <p className="text-slate-400 max-w-xs mx-auto">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">No Strategy Selected</h2>
+              <p className="text-slate-400 dark:text-slate-500 max-w-xs mx-auto">
                 Select an existing strategy from the sidebar or create a new one to start building your rules.
               </p>
             </div>
             <button 
               onClick={addStrategy}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+              className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-100 dark:shadow-indigo-900/20 hover:bg-indigo-700 transition-all active:scale-95"
             >
               <Plus size={20} strokeWidth={3} />
               Create New Strategy

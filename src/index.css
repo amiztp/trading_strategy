@@ -8,8 +8,20 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased transition-colors duration-300;
   }
+}
+
+:root {
+  --color-chart-empty: #F1F5F9;
+  --color-chart-unchecked: #E2E8F0;
+  --color-chart-text: #0f172a;
+}
+
+.dark {
+  --color-chart-empty: #1e293b;
+  --color-chart-unchecked: #334155;
+  --color-chart-text: #f8fafc;
 }
 
 .scrollbar-hide::-webkit-scrollbar {

@@ -28,10 +28,10 @@ export const AccuracyChart: React.FC<AccuracyChartProps> = ({ checkedCount, tota
       .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
     const data = totalCount === 0 
-      ? [{ label: 'Empty', value: 1, color: '#F1F5F9' }]
+      ? [{ label: 'Empty', value: 1, color: 'var(--color-chart-empty)' }]
       : [
           { label: 'Checked', value: checkedCount, color: '#4F46E5' },
-          { label: 'Unchecked', value: Math.max(0, totalCount - checkedCount), color: '#E2E8F0' }
+          { label: 'Unchecked', value: Math.max(0, totalCount - checkedCount), color: 'var(--color-chart-unchecked)' }
         ];
 
     const pie = d3.pie<any>()
@@ -49,7 +49,8 @@ export const AccuracyChart: React.FC<AccuracyChartProps> = ({ checkedCount, tota
       .append('path')
       .attr('d', arc)
       .attr('fill', d => d.data.color)
-      .attr('stroke', 'white')
+      .attr('stroke', 'currentColor')
+      .attr('class', 'text-white dark:text-slate-900')
       .style('stroke-width', '2px');
 
     // Central Text
@@ -59,7 +60,7 @@ export const AccuracyChart: React.FC<AccuracyChartProps> = ({ checkedCount, tota
       .style('font-size', '32px')
       .style('font-weight', '800')
       .style('font-family', 'JetBrains Mono, monospace')
-      .style('fill', '#0f172a')
+      .attr('fill', 'var(--color-chart-text)')
       .text(`${percentage}%`);
 
     svg.append('text')
@@ -78,19 +79,19 @@ export const AccuracyChart: React.FC<AccuracyChartProps> = ({ checkedCount, tota
     <div className="w-full flex flex-col items-center">
       <div ref={chartRef} className="w-full h-[220px]" />
       
-      <div className="mt-2 flex gap-8">
-        <div className="flex items-center gap-3">
+      <div className="mt-6 flex flex-wrap justify-center gap-6">
+        <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
           <div className="w-2.5 h-2.5 rounded-full bg-[#4F46E5]" />
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Checked</span>
-            <span className="text-sm font-bold text-slate-700 font-mono">{checkedCount}</span>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 font-mono leading-none">{checkedCount}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#E2E8F0]" />
+        <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-slate-700" />
           <div className="flex flex-col">
             <span className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Total</span>
-            <span className="text-sm font-bold text-slate-700 font-mono">{totalCount}</span>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 font-mono leading-none">{totalCount}</span>
           </div>
         </div>
       </div>
