@@ -1,0 +1,5 @@
+{
+  "name": "Strategy Builder",
+  "description": "A web application to manage strategies and rules with real-time accuracy visualization.",
+  "requestFramePermissions": []
+}

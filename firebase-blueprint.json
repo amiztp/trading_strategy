@@ -1,0 +1,33 @@
+{
+  "entities": {
+    "Strategy": {
+      "title": "Strategy",
+      "description": "A collection of rules and metadata for a specific strategy.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the strategy." },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "checked": { "type": "boolean" }
+            },
+            "required": ["id", "text", "checked"]
+          }
+        },
+        "createdAt": { "type": "number", "description": "Timestamp when the strategy was created." },
+        "uid": { "type": "string", "description": "The UID of the user who owns this strategy." }
+      },
+      "required": ["name", "rules", "createdAt", "uid"]
+    }
+  },
+  "firestore": {
+    "strategies/{strategyId}": {
+      "schema": "Strategy",
+      "description": "User-specific strategies."
+    }
+  }
+}

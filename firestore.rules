@@ -1,0 +1,56 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: strategies
+// Document ID: {strategyId}
+// Fields:
+//   - id: string (required) - Unique ID for the strategy
+//   - name: string (required) - Name of the strategy (max 100 chars)
+//   - rules: list (required) - List of rule objects {id, text, checked}
+//   - createdAt: number (required) - Creation timestamp
+//   - uid: string (required) - Owner's UID
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isValidStrategy(data) {
+      return data.keys().hasAll(['name', 'rules', 'createdAt', 'uid']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.rules is list &&
+             data.createdAt is number &&
+             data.uid == request.auth.uid &&
+             data.keys().hasOnly(['name', 'rules', 'createdAt', 'uid']);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /strategies/{strategyId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && isValidStrategy(request.resource.data);
+      allow update: if isAuthenticated() && isDocOwner() && isValidStrategy(request.resource.data);
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+  }
+}
