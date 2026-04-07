@@ -29,7 +29,9 @@ import {
   query, 
   where, 
   orderBy,
-  getDocFromServer
+  getDocFromServer,
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
 import { 
   signInWithPopup, 
@@ -145,9 +147,28 @@ export default function App() {
 
   // 2. Auth Listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setIsAuthReady(true);
+      
+      if (currentUser) {
+        // Sync user profile to Firestore
+        try {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (!userSnap.exists()) {
+            await setDoc(userRef, {
+              email: currentUser.email,
+              displayName: currentUser.displayName,
+              photoURL: currentUser.photoURL,
+              role: 'user' // Default role
+            });
+          }
+        } catch (error) {
+          console.error("Error syncing user profile:", error);
+        }
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -219,7 +240,8 @@ export default function App() {
       if (error.code === 'auth/popup-blocked') {
         message = 'Popup was blocked by your browser. Please allow popups for this site.';
       } else if (error.code === 'auth/unauthorized-domain') {
-        message = 'This domain is not authorized in the Firebase console. Please check your Firebase settings.';
+        const domain = window.location.hostname;
+        message = `This domain (${domain}) is not authorized in the Firebase console. Please add it to Authentication > Settings > Authorized domains.`;
       } else if (error.code === 'auth/cancelled-popup-request') {
         message = 'A sign-in request was already in progress. Please wait for the popup or try again.';
       } else if (error.message) {

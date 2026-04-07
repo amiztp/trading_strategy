@@ -5,11 +5,18 @@
 // Collection: strategies
 // Document ID: {strategyId}
 // Fields:
-//   - id: string (required) - Unique ID for the strategy
-//   - name: string (required) - Name of the strategy (max 100 chars)
-//   - rules: list (required) - List of rule objects {id, text, checked}
-//   - createdAt: number (required) - Creation timestamp
-//   - uid: string (required) - Owner's UID
+//   - name: string (required, 1-100 chars)
+//   - rules: list (required, max 50 items)
+//   - createdAt: number (required)
+//   - uid: string (required, matches auth.uid)
+//
+// Collection: users
+// Document ID: {userId}
+// Fields:
+//   - displayName: string (optional)
+//   - email: string (required)
+//   - photoURL: string (optional)
+//   - role: string (required, 'admin' or 'user')
 //
 // ===============================================================
 
@@ -33,24 +40,43 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == resource.data.uid;
     }
 
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "amishkathejanperera@gmail.com" && request.auth.token.email_verified == true));
+    }
+
     function isValidStrategy(data) {
       return data.keys().hasAll(['name', 'rules', 'createdAt', 'uid']) &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.rules is list &&
+             data.rules is list && data.rules.size() <= 50 &&
              data.createdAt is number &&
              data.uid == request.auth.uid &&
              data.keys().hasOnly(['name', 'rules', 'createdAt', 'uid']);
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role']) &&
+             data.email is string &&
+             data.role in ['admin', 'user'] &&
+             data.keys().hasOnly(['email', 'role', 'displayName', 'photoURL']);
     }
 
     // ===============================================================
     // Rules
     // ===============================================================
 
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'user';
+      allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+    }
+
     match /strategies/{strategyId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && isValidStrategy(request.resource.data);
       allow update: if isAuthenticated() && isDocOwner() && isValidStrategy(request.resource.data);
-      allow delete: if isAuthenticated() && isDocOwner();
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
     }
   }
 }
