@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
@@ -40,10 +42,10 @@ import {
   signOut,
   User
 } from 'firebase/auth';
-import { db, auth } from './firebase';
-import { AccuracyChart } from './components/AccuracyChart';
-import { Strategy, Rule } from './types';
-import { cn } from './lib/utils';
+import { db, auth } from '@/lib/firebase';
+import { AccuracyChart } from '@/components/AccuracyChart';
+import { Strategy, Rule } from '@/types';
+import { cn } from '@/lib/utils';
 
 // --- Firestore Error Handling ---
 enum OperationType {

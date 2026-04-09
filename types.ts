@@ -9,4 +9,5 @@ export interface Strategy {
   name: string;
   rules: Rule[];
   createdAt: number;
+  uid: string;
 }

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
@@ -59,7 +61,7 @@ export const AccuracyChart: React.FC<AccuracyChartProps> = ({ checkedCount, tota
       .attr('dy', '-0.2em')
       .style('font-size', '32px')
       .style('font-weight', '800')
-      .style('font-family', 'JetBrains Mono, monospace')
+      .style('font-family', 'var(--font-mono)')
       .attr('fill', 'var(--color-chart-text)')
       .text(`${percentage}%`);
 
