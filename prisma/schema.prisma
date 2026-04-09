@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?    // For custom auth
+  strategies    Strategy[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Strategy {
+  id        String   @id @default(cuid())
+  name      String
+  rules     Rule[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Rule {
+  id         String   @id @default(cuid())
+  text       String
+  checked    Boolean  @default(false)
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  strategyId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
