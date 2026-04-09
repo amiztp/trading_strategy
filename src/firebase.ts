@@ -18,9 +18,15 @@ const firebaseConfig = {
   messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID', firebaseAppletConfig.messagingSenderId),
 };
 
-const firestoreDatabaseId = getEnv('VITE_FIREBASE_FIRESTORE_DATABASE_ID', firebaseAppletConfig.firestoreDatabaseId);
+const envDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID;
+const configDbId = firebaseAppletConfig.firestoreDatabaseId;
+const firestoreDatabaseId = (envDbId && envDbId.trim() !== "") ? envDbId : configDbId;
 
-console.log("Initializing Firestore with Database ID:", firestoreDatabaseId);
+console.log("Firestore Config:", {
+  envDbId,
+  configDbId,
+  usingDbId: firestoreDatabaseId
+});
 
 // Initialize Firebase SDK
 let app;
